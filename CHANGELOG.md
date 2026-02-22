@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.1.0] - 2026-02-22
+
+### Added
+
+#### File Attachments
+- File upload support at RMA creation (drag & drop or file picker) for both customer and guest
+- File upload support in comments (admin and customer)
+- Unified **Attachments** section on RMA detail page showing all attachments regardless of source (creation or comment)
+- Attachments remain visible inline within each comment for context
+- Dynamic update of unified section when new comments with attachments arrive via AJAX polling
+- Admin can delete attachments from both the unified section and comment timeline (synchronized)
+- Dedicated download controller with authorization checks (customer ownership, admin ACL)
+- Temporary upload endpoint with server-side validation (extension, file size)
+- Configurable allowed file extensions (default: jpg, jpeg, png, gif, webp, mp4, mov, pdf, doc, docx, zip)
+- Configurable maximum file size per file (default: 10 MB)
+- Configurable maximum files per upload (default: 5)
+- Configuration available at Stores > Configuration > Sales > RMA - Return Management > Attachments
+- Full Hyvä support with Alpine.js upload widget and dynamic unified section
+- Shared JS utilities (`rma-utils.js`, `rma-file-upload.js`) for Luma frontend and admin
+- Attachment translations for it_IT, fr_FR, de_DE, es_ES (24 new strings per language)
+- `AttachmentService` with `saveFromJson()`, `moveFromTmpAndSave()`, `getByRmaId()`, `toArray()`, `formatFileSize()`
+- `AttachmentConfigTrait` for shared configuration getters across blocks
+- Database table `rma_attachment` with fields: entity_id, rma_entity_id, comment_id (nullable), file_name, file_path, file_size
+
 ## [1.0.2] - 2026-02-20
 ### Fixed
 - Added PHP version constraint to composer.json to reflect requirements

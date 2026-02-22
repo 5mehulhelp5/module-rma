@@ -49,6 +49,14 @@ Module settings are located at **Stores > Configuration > Sales > RMA - Return M
 | New RMA Email Template (Admin) | Select | — | Email template sent to the admin when a new return is created |
 | Admin Notification Email | Text (email) | — | Email address to receive admin notifications about returns |
 
+### Attachments
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| Allowed File Extensions | Text | `jpg,jpeg,png,gif,webp,mp4,mov,pdf,doc,docx,zip` | Comma-separated list of allowed file extensions |
+| Maximum File Size (MB) | Numeric | `10` | Maximum allowed file size in megabytes per single file |
+| Maximum Files Per Upload | Numeric | `5` | Maximum number of files allowed per RMA creation or comment |
+
 ## Admin Area
 
 ### Menu
@@ -76,12 +84,21 @@ In edit mode, the form shows order and item information as read-only. You can mo
 
 Changing the status automatically sends a notification email to the customer.
 
+### Attachments
+
+The RMA edit page displays a unified **Attachments** section above the comments timeline. This section shows all attachments associated with the RMA, regardless of whether they were uploaded at RMA creation or within a comment.
+
+- Each attachment has a **download** link and a **delete** button
+- Deleting an attachment from the unified section also removes it from the corresponding comment in the timeline (and vice versa)
+- The section updates dynamically when new comments with attachments arrive via polling
+
 ### Comments / Chat
 
 The RMA edit page includes a **Comments** section that enables communication between admin and customer.
 
 - Admin can write comments visible to the customer or **internal notes** (not visible to the customer) via the "Visible to Customer" checkbox
 - Internal notes display an **Internal Note** badge in the timeline
+- Admin can attach files to comments via drag & drop or file picker
 - Comments update in real time via AJAX polling with progressive backoff (10s → 30s → 60s)
 - Polling pauses when the browser tab is not visible and resumes when it becomes active again
 - Messages can be sent with **Ctrl+Enter** in addition to the button
@@ -110,6 +127,7 @@ The page displays return information and the items table:
 
 - **General information**: increment ID, order, status, reason, preferred resolution, creation and update dates
 - **Items table**: product name, SKU, requested quantity, item condition
+- **Attachments section**: all attachments uploaded across the RMA lifecycle (creation and comments) displayed in a unified list with download links. The section is always present and updates dynamically when new comments with attachments arrive
 - All labels (status, reason, resolution, condition) are translated according to the current store view
 
 #### Customer Comments / Chat
@@ -118,6 +136,8 @@ Below the detail section there is a comments area that allows the customer to co
 
 - The customer only sees comments marked as visible (admin internal notes are not shown)
 - Admin messages display a **Support** badge
+- Customers can attach files to comments via drag & drop or file picker
+- Attachments are also shown inline within each comment for context
 - Same real-time polling mechanism as the admin side (backoff 10s → 30s → 60s, pauses on hidden tab)
 - Submit with **Ctrl+Enter** or the **Send** button
 
@@ -128,7 +148,8 @@ Below the detail section there is a comments area that allows the customer to co
 3. On order change, available items are loaded via AJAX
 4. For each item: check the checkbox, specify quantity and condition
 5. Select reason and preferred resolution
-6. Click **Submit Return Request**
+6. Optionally attach files via drag & drop or file picker (allowed extensions and size limits are configurable — see Attachments configuration)
+7. Click **Submit Return Request**
 
 If arriving from the **Request Return** button on the order detail page, the order is pre-selected and the dropdown is disabled.
 
