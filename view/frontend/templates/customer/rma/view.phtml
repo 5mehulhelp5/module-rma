@@ -11,6 +11,7 @@ if (!$rma) {
     return;
 }
 $items = $block->getRmaItems();
+$attachments = $block->getAttachments();
 ?>
 <div class="block block-rma-view">
     <div class="block-title">
@@ -99,5 +100,32 @@ $items = $block->getRmaItems();
                 </div>
             </div>
         <?php endif; ?>
+
+        <div class="box box-rma-attachments" style="margin-top: 15px;">
+            <strong class="box-title">
+                <span><?= $block->escapeHtml(__('Attachments')) ?></span>
+            </strong>
+            <div class="box-content">
+                <ul id="rma-all-attachments" style="list-style: none; padding: 0; margin: 0;">
+                    <?php if (empty($attachments)): ?>
+                        <li class="rma-no-attachments" style="color: #999; font-style: italic; padding: 6px 0;">
+                            <?= $block->escapeHtml(__('No attachments yet.')) ?>
+                        </li>
+                    <?php else: ?>
+                        <?php foreach ($attachments as $att): ?>
+                            <li data-attachment-id="<?= (int)$att['entity_id'] ?>" style="padding: 6px 0; border-bottom: 1px solid #eee;">
+                                <a href="<?= $block->escapeUrl($block->getDownloadUrl((int)$att['entity_id'])) ?>"
+                                   style="color: #1979c3; text-decoration: none;">
+                                    &#128206; <?= $block->escapeHtml($att['file_name']) ?>
+                                </a>
+                                <span style="color: #999; font-size: 12px;">
+                                    (<?= $block->escapeHtml($att['file_size_label']) ?>)
+                                </span>
+                            </li>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </ul>
+            </div>
+        </div>
     </div>
 </div>

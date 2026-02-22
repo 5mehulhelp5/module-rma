@@ -1,8 +1,9 @@
 define([
     'jquery',
     'mage/translate',
+    'MageOS_RMA/js/rma-utils',
     'jquery/jquery.cookie'
-], function ($, $t) {
+], function ($, $t, rmaUtils) {
     'use strict';
 
     return function (config, element) {
@@ -11,11 +12,15 @@ define([
             loadListUrl = config.loadListUrl,
             lastCommentId = config.lastCommentId || 0,
             isAdmin = config.isAdmin || false,
+            downloadUrl = config.downloadUrl || '',
+            deleteUrl = config.deleteUrl || '',
             $container = $(element),
             $timeline = $container.find('#rma-comments-timeline'),
             $textarea = $container.find('#rma-comment-text'),
             $submitBtn = $container.find('#rma-comment-submit'),
             $visibleCheckbox = $container.find('#rma-comment-visible'),
+            $uploadWidget = $container.find('.rma-comment-upload-widget'),
+            $allAttachments = $('#rma-all-attachments'),
             pollTimer = null,
             baseInterval = 10000,
             maxInterval = 60000,
@@ -24,6 +29,64 @@ define([
 
         function scrollToBottom() {
             $timeline.scrollTop($timeline[0].scrollHeight);
+        }
+
+        function addToUnifiedSection(attachments) {
+            if (!attachments || attachments.length === 0 || !$allAttachments.length) {
+                return;
+            }
+
+            $allAttachments.find('.rma-no-attachments').remove();
+
+            $.each(attachments, function (i, att) {
+                if ($allAttachments.find('[data-attachment-id="' + att.entity_id + '"]').length) {
+                    return;
+                }
+
+                let url = downloadUrl + (downloadUrl.indexOf('?') > -1 ? '&' : '?') + 'id=' + att.entity_id,
+                    html = '<li data-attachment-id="' + att.entity_id + '" style="padding: 6px 0; border-bottom: 1px solid #eee;">' +
+                        '<a href="' + url + '" target="_blank" style="color: #1979c3; text-decoration: none;">' +
+                        '&#128206; ' + $('<span>').text(att.file_name).html() +
+                        '</a>' +
+                        ' <span style="color: #999; font-size: 12px;">(' + rmaUtils.formatFileSize(att.file_size) + ')</span>';
+
+                if (isAdmin && deleteUrl) {
+                    html += ' <button type="button" class="rma-unified-attachment-delete" data-id="' + att.entity_id + '" ' +
+                        'style="color: #e22626; cursor: pointer; border: none; background: none; font-size: 11px; padding: 0; margin-left: 4px;">' +
+                        $t('Delete') + '</button>';
+                }
+
+                html += '</li>';
+                $allAttachments.append(html);
+            });
+        }
+
+        function renderAttachments(attachments) {
+            if (!attachments || attachments.length === 0) {
+                return '';
+            }
+
+            let html = '<div class="rma-comment-attachments" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(0,0,0,0.1);">';
+
+            $.each(attachments, function (i, att) {
+                let url = downloadUrl + (downloadUrl.indexOf('?') > -1 ? '&' : '?') + 'id=' + att.entity_id;
+                html += '<div class="rma-attachment-item" style="font-size: 11px; margin-top: 3px;">';
+                html += '<a href="' + url + '" target="_blank" style="color: #1979c3; text-decoration: none;">';
+                html += '&#128206; ' + $('<span>').text(att.file_name).html();
+                html += '</a>';
+                html += ' <span style="color: #999;">(' + rmaUtils.formatFileSize(att.file_size) + ')</span>';
+
+                if (isAdmin && deleteUrl) {
+                    html += ' <button type="button" class="rma-attachment-delete" data-id="' + att.entity_id + '" ' +
+                        'style="color: #e22626; cursor: pointer; border: none; background: none; font-size: 11px; padding: 0;">' +
+                        $t('Delete') + '</button>';
+                }
+
+                html += '</div>';
+            });
+
+            html += '</div>';
+            return html;
         }
 
         function renderComment(comment) {
@@ -65,9 +128,11 @@ define([
 
             html += '</div>' +
                 '<div style="white-space: pre-wrap;">' + $('<span>').text(comment.comment).html() + '</div>' +
+                renderAttachments(comment.attachments) +
                 '</div>';
 
             $timeline.append(html);
+            addToUnifiedSection(comment.attachments);
         }
 
         function pollComments() {
@@ -128,10 +193,14 @@ define([
             sending = true;
             $submitBtn.prop('disabled', true);
 
+            let uploadApi = $uploadWidget.data('rmaFileUpload'),
+                attachmentsJson = uploadApi ? uploadApi.getJson() : '[]';
+
             let postData = {
                 rma_id: rmaId,
                 comment: commentText,
-                form_key: isAdmin ? window.FORM_KEY : ($.cookie('form_key') || '')
+                form_key: isAdmin ? window.FORM_KEY : ($.cookie('form_key') || ''),
+                attachments: attachmentsJson
             };
 
             if (isAdmin && $visibleCheckbox.length) {
@@ -150,6 +219,10 @@ define([
                         $textarea.val('');
                         scrollToBottom();
                         currentInterval = baseInterval;
+
+                        if (uploadApi) {
+                            uploadApi.clear();
+                        }
                     }
                 },
                 complete: function () {
@@ -157,6 +230,76 @@ define([
                     $submitBtn.prop('disabled', false);
                     $textarea.focus();
                 }
+            });
+        }
+
+        function handleDeleteAttachment($btn, attachmentId) {
+            if (!confirm($t('Delete this attachment?'))) {
+                return;
+            }
+
+            $.ajax({
+                url: deleteUrl,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    id: attachmentId,
+                    form_key: window.FORM_KEY
+                },
+                success: function (response) {
+                    if (response.success) {
+                        $btn.closest('.rma-attachment-item').remove();
+                        $allAttachments.find('[data-attachment-id="' + attachmentId + '"]').remove();
+
+                        if (!$allAttachments.find('[data-attachment-id]').length) {
+                            $allAttachments.append(
+                                '<li class="rma-no-attachments" style="color: #999; font-style: italic; padding: 4px 0;">' +
+                                $t('No attachments yet.') + '</li>'
+                            );
+                        }
+                    }
+                }
+            });
+        }
+
+        // Admin: delete attachment from comment timeline
+        if (isAdmin && deleteUrl) {
+            $timeline.on('click', '.rma-attachment-delete', function () {
+                handleDeleteAttachment($(this), $(this).data('id'));
+            });
+
+            // Admin: delete attachment from unified section
+            $allAttachments.on('click', '.rma-unified-attachment-delete', function () {
+                let attachmentId = $(this).data('id'),
+                    $li = $(this).closest('li');
+
+                if (!confirm($t('Delete this attachment?'))) {
+                    return;
+                }
+
+                $.ajax({
+                    url: deleteUrl,
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        id: attachmentId,
+                        form_key: window.FORM_KEY
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            $li.remove();
+                            $timeline.find('.rma-attachment-delete[data-id="' + attachmentId + '"]')
+                                .closest('.rma-attachment-item').remove();
+
+                            if (!$allAttachments.find('[data-attachment-id]').length) {
+                                $allAttachments.append(
+                                    '<li class="rma-no-attachments" style="color: #999; font-style: italic; padding: 4px 0;">' +
+                                    $t('No attachments yet.') + '</li>'
+                                );
+                            }
+                        }
+                    }
+                });
             });
         }
 

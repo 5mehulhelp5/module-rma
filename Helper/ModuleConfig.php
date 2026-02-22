@@ -27,6 +27,7 @@ class ModuleConfig extends AbstractHelper
     const string GROUP_GENERAL = self::SECTION . 'general/';
     const string GROUP_POLICY = self::SECTION . 'policy/';
     const string GROUP_EMAIL = self::SECTION . 'email/';
+    const string GROUP_ATTACHMENTS = self::SECTION . 'attachments/';
 
     const string XML_PATH_ENABLED = self::GROUP_GENERAL . 'enabled';
     const string XML_PATH_INCREMENT_ID_PREFIX = self::GROUP_GENERAL . 'increment_id_prefix';
@@ -40,6 +41,10 @@ class ModuleConfig extends AbstractHelper
     const string XML_PATH_CUSTOMER_STATUS_CHANGE_TEMPLATE = self::GROUP_EMAIL . 'customer_status_change_template';
     const string XML_PATH_ADMIN_NEW_TEMPLATE = self::GROUP_EMAIL . 'admin_new_template';
     const string XML_PATH_ADMIN_NOTIFY_EMAIL = self::GROUP_EMAIL . 'admin_notify_email';
+
+    const string XML_PATH_ALLOWED_EXTENSIONS = self::GROUP_ATTACHMENTS . 'allowed_extensions';
+    const string XML_PATH_MAX_FILE_SIZE = self::GROUP_ATTACHMENTS . 'max_file_size';
+    const string XML_PATH_MAX_FILES = self::GROUP_ATTACHMENTS . 'max_files';
 
     /**
      * @param int $storeId
@@ -187,5 +192,39 @@ class ModuleConfig extends AbstractHelper
             ScopeInterface::SCOPE_STORE,
             $storeId
         );
+    }
+
+    /**
+     * @return array
+     */
+    public function getAllowedAttachmentExtensions(): array
+    {
+        $value = (string)$this->scopeConfig->getValue(self::XML_PATH_ALLOWED_EXTENSIONS);
+
+        return $value !== '' ? array_map('trim', explode(',', strtolower($value))) : [];
+    }
+
+    /**
+     * @return int
+     */
+    public function getMaxAttachmentFileSize(): int
+    {
+        return max(1, (int)$this->scopeConfig->getValue(self::XML_PATH_MAX_FILE_SIZE));
+    }
+
+    /**
+     * @return int
+     */
+    public function getMaxAttachmentFileSizeBytes(): int
+    {
+        return $this->getMaxAttachmentFileSize() * 1024 * 1024;
+    }
+
+    /**
+     * @return int
+     */
+    public function getMaxAttachmentFiles(): int
+    {
+        return max(1, (int)$this->scopeConfig->getValue(self::XML_PATH_MAX_FILES));
     }
 }

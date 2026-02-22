@@ -266,4 +266,33 @@
             <column name="created_at"/>
         </index>
     </table>
+
+    <!-- RMA Attachment table -->
+    <table name="rma_attachment" resource="default" engine="innodb" comment="RMA Attachment">
+        <column xsi:type="int" name="entity_id" unsigned="true" nullable="false" identity="true" comment="Attachment ID"/>
+        <column xsi:type="int" name="rma_id" unsigned="true" nullable="false" comment="RMA Entity ID"/>
+        <column xsi:type="int" name="comment_id" unsigned="true" nullable="true" comment="Comment ID"/>
+        <column xsi:type="varchar" name="file_name" nullable="false" length="255" comment="Original File Name"/>
+        <column xsi:type="varchar" name="file_path" nullable="false" length="512" comment="Relative File Path"/>
+        <column xsi:type="int" name="file_size" unsigned="true" nullable="false" default="0" comment="File Size in Bytes"/>
+        <column xsi:type="varchar" name="mime_type" nullable="false" length="128" comment="MIME Type"/>
+        <column xsi:type="timestamp" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP" comment="Created At"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="entity_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="RMA_ATTACHMENT_RMA_ID_RMA_ENTITY_ENTITY_ID"
+                    table="rma_attachment" column="rma_id"
+                    referenceTable="rma_entity" referenceColumn="entity_id"
+                    onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="RMA_ATTACHMENT_COMMENT_ID_RMA_COMMENT_ENTITY_ID"
+                    table="rma_attachment" column="comment_id"
+                    referenceTable="rma_comment" referenceColumn="entity_id"
+                    onDelete="SET NULL"/>
+        <index referenceId="RMA_ATTACHMENT_RMA_ID" indexType="btree">
+            <column name="rma_id"/>
+        </index>
+        <index referenceId="RMA_ATTACHMENT_COMMENT_ID" indexType="btree">
+            <column name="comment_id"/>
+        </index>
+    </table>
 </schema>

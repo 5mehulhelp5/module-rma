@@ -8,6 +8,7 @@
     <preference for="MageOS\RMA\Api\Data\ItemConditionInterface" type="MageOS\RMA\Model\ItemCondition"/>
     <preference for="MageOS\RMA\Api\Data\ItemInterface" type="MageOS\RMA\Model\Item"/>
     <preference for="MageOS\RMA\Api\Data\CommentInterface" type="MageOS\RMA\Model\Comment"/>
+    <preference for="MageOS\RMA\Api\Data\AttachmentInterface" type="MageOS\RMA\Model\Attachment"/>
 
     <!-- SearchResults Interfaces -->
     <preference for="MageOS\RMA\Api\Data\RMASearchResultsInterface" type="Magento\Framework\Api\SearchResults"/>
@@ -17,6 +18,7 @@
     <preference for="MageOS\RMA\Api\Data\ResolutionTypeSearchResultsInterface" type="Magento\Framework\Api\SearchResults"/>
     <preference for="MageOS\RMA\Api\Data\ItemConditionSearchResultsInterface" type="Magento\Framework\Api\SearchResults"/>
     <preference for="MageOS\RMA\Api\Data\ItemSearchResultsInterface" type="Magento\Framework\Api\SearchResults"/>
+    <preference for="MageOS\RMA\Api\Data\AttachmentSearchResultsInterface" type="Magento\Framework\Api\SearchResults"/>
 
     <!-- Email -->
     <preference for="MageOS\RMA\Api\Email\SenderInterface" type="MageOS\RMA\Service\Email\Sender"/>
@@ -87,6 +89,7 @@
     <preference for="MageOS\RMA\Api\ItemConditionRepositoryInterface" type="MageOS\RMA\Model\ItemConditionRepository"/>
     <preference for="MageOS\RMA\Api\ItemRepositoryInterface" type="MageOS\RMA\Model\ItemRepository"/>
     <preference for="MageOS\RMA\Api\CommentRepositoryInterface" type="MageOS\RMA\Model\CommentRepository"/>
+    <preference for="MageOS\RMA\Api\AttachmentRepositoryInterface" type="MageOS\RMA\Model\AttachmentRepository"/>
 
     <!-- Management Interfaces -->
     <preference for="MageOS\RMA\Api\RmaCommentManagementInterface" type="MageOS\RMA\Model\RmaCommentManagement"/>

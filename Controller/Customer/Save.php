@@ -92,6 +92,8 @@ class Save implements HttpPostActionInterface
             return $resultRedirect->setPath('rma/customer/create', ['order_id' => $orderId]);
         }
 
+        $attachmentsJson = (string)($data['attachments'] ?? '');
+
         try {
             $rma = $this->rmaSubmitService->createRma(
                 $order,
@@ -100,7 +102,8 @@ class Save implements HttpPostActionInterface
                 (string)($order->getCustomerName() ?: __('Guest')),
                 (int)($data['reason_id'] ?? 0),
                 (int)($data['resolution_type_id'] ?? 0),
-                $selectedItems
+                $selectedItems,
+                $attachmentsJson
             );
 
             $this->messageManager->addSuccessMessage(__('Your return request has been submitted successfully.'));

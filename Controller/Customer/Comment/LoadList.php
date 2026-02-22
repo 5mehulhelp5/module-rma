@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MageOS\RMA\Controller\Customer\Comment;
 
 use MageOS\RMA\Api\RMARepositoryInterface;
-use MageOS\RMA\Model\ResourceModel\Comment\CollectionFactory;
 use MageOS\RMA\Service\CommentFormatter;
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\Action\HttpGetActionInterface;
@@ -19,7 +18,6 @@ class LoadList implements HttpGetActionInterface
     /**
      * @param RequestInterface $request
      * @param JsonFactory $jsonFactory
-     * @param CollectionFactory $collectionFactory
      * @param RMARepositoryInterface $rmaRepository
      * @param CustomerSession $customerSession
      * @param CommentFormatter $commentFormatter
@@ -27,7 +25,6 @@ class LoadList implements HttpGetActionInterface
     public function __construct(
         protected readonly RequestInterface $request,
         protected readonly JsonFactory $jsonFactory,
-        protected readonly CollectionFactory $collectionFactory,
         protected readonly RMARepositoryInterface $rmaRepository,
         protected readonly CustomerSession $customerSession,
         protected readonly CommentFormatter $commentFormatter
@@ -56,7 +53,7 @@ class LoadList implements HttpGetActionInterface
             return $result->setData(['success' => false, 'comments' => []]);
         }
 
-        $comments = $this->loadComments($rmaId, $afterId);
+        $comments = $this->commentFormatter->buildList($rmaId, visibleOnly: true, afterId: $afterId);
 
         return $result->setData(['success' => true, 'comments' => $comments]);
     }
@@ -74,30 +71,5 @@ class LoadList implements HttpGetActionInterface
         }
 
         return (int)$rma->getCustomerId() === (int)$this->customerSession->getCustomerId();
-    }
-
-    /**
-     * @param int $rmaId
-     * @param int $afterId
-     * @return array
-     */
-    protected function loadComments(int $rmaId, int $afterId): array
-    {
-        $collection = $this->collectionFactory->create();
-        $collection->addFieldToFilter('rma_id', $rmaId);
-        $collection->addFieldToFilter('is_visible_to_customer', 1);
-
-        if ($afterId > 0) {
-            $collection->addFieldToFilter('entity_id', ['gt' => $afterId]);
-        }
-
-        $collection->setOrder('created_at', 'ASC');
-
-        $comments = [];
-        foreach ($collection as $comment) {
-            $comments[] = $this->commentFormatter->toArray($comment);
-        }
-
-        return $comments;
     }
 }

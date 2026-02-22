@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace MageOS\RMA\Block\Customer\Rma\View;
 
 use MageOS\RMA\Api\Data\RMAInterface;
-use MageOS\RMA\Model\ResourceModel\Comment\CollectionFactory;
+use MageOS\RMA\Block\Trait\AttachmentConfigTrait;
+use MageOS\RMA\Helper\ModuleConfig;
+use MageOS\RMA\Service\CommentFormatter;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 
 class Comments extends Template
 {
+    use AttachmentConfigTrait;
+
     /**
      * @var string
      */
@@ -18,12 +22,14 @@ class Comments extends Template
 
     /**
      * @param Context $context
-     * @param CollectionFactory $commentCollectionFactory
+     * @param CommentFormatter $commentFormatter
+     * @param ModuleConfig $moduleConfig
      * @param array $data
      */
     public function __construct(
         Context $context,
-        protected readonly CollectionFactory $commentCollectionFactory,
+        protected readonly CommentFormatter $commentFormatter,
+        protected readonly ModuleConfig $moduleConfig,
         array $data = []
     ) {
         parent::__construct($context, $data);
@@ -56,23 +62,7 @@ class Comments extends Template
             return [];
         }
 
-        $collection = $this->commentCollectionFactory->create();
-        $collection->addFieldToFilter('rma_id', $rmaId);
-        $collection->addFieldToFilter('is_visible_to_customer', 1);
-        $collection->setOrder('created_at', 'ASC');
-
-        $comments = [];
-        foreach ($collection as $comment) {
-            $comments[] = [
-                'entity_id' => $comment->getEntityId(),
-                'author_type' => $comment->getAuthorType(),
-                'author_name' => $comment->getAuthorName(),
-                'comment' => $comment->getComment(),
-                'created_at' => $comment->getCreatedAt(),
-            ];
-        }
-
-        return $comments;
+        return $this->commentFormatter->buildList($rmaId, visibleOnly: true);
     }
 
     /**
@@ -89,5 +79,21 @@ class Comments extends Template
     public function getLoadListUrl(): string
     {
         return $this->getUrl('rma/customer_comment/loadList');
+    }
+
+    /**
+     * @return string
+     */
+    public function getUploadUrl(): string
+    {
+        return $this->getUrl('rma/customer_attachment/upload');
+    }
+
+    /**
+     * @return string
+     */
+    public function getDownloadUrl(): string
+    {
+        return $this->getUrl('rma/customer_attachment/download');
     }
 }

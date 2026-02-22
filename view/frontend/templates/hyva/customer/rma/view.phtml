@@ -11,6 +11,7 @@ if (!$rma) {
     return;
 }
 $items = $block->getRmaItems();
+$attachments = $block->getAttachments();
 ?>
 <div class="mb-6">
     <div class="flex items-center justify-between mb-4">
@@ -115,4 +116,27 @@ $items = $block->getRmaItems();
             </div>
         </div>
     <?php endif; ?>
+
+    <div class="bg-white border border-gray-200 rounded-lg p-6 mt-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <?= $block->escapeHtml(__('Attachments')) ?>
+        </h3>
+        <ul id="rma-all-attachments" class="divide-y divide-gray-100">
+            <?php if (empty($attachments)): ?>
+                <li class="rma-no-attachments py-2 text-sm text-gray-400 italic">
+                    <?= $block->escapeHtml(__('No attachments yet.')) ?>
+                </li>
+            <?php else: ?>
+                <?php foreach ($attachments as $att): ?>
+                    <li data-attachment-id="<?= (int)$att['entity_id'] ?>" class="py-2">
+                        <a href="<?= $block->escapeUrl($block->getDownloadUrl((int)$att['entity_id'])) ?>"
+                           class="text-sm text-primary hover:text-primary-darker hover:underline">
+                            &#128206; <?= $block->escapeHtml($att['file_name']) ?>
+                        </a>
+                        <span class="text-xs text-gray-400 ml-1">(<?= $block->escapeHtml($att['file_size_label']) ?>)</span>
+                    </li>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </ul>
+    </div>
 </div>

@@ -26,6 +26,7 @@ class RmaSubmitService
      * @param ItemRepositoryInterface $itemRepository
      * @param StatusCollectionFactory $statusCollectionFactory
      * @param ModuleConfig $moduleConfig
+     * @param AttachmentService $attachmentService
      */
     public function __construct(
         protected readonly RMARepositoryInterface $rmaRepository,
@@ -33,7 +34,8 @@ class RmaSubmitService
         protected readonly ItemFactory $itemFactory,
         protected readonly ItemRepositoryInterface $itemRepository,
         protected readonly StatusCollectionFactory $statusCollectionFactory,
-        protected readonly ModuleConfig $moduleConfig
+        protected readonly ModuleConfig $moduleConfig,
+        protected readonly AttachmentService $attachmentService
     ) {
     }
 
@@ -72,6 +74,7 @@ class RmaSubmitService
      * @param int $reasonId
      * @param int $resolutionTypeId
      * @param array $selectedItems
+     * @param string $attachmentsJson
      * @return RMAInterface
      * @throws CouldNotSaveException
      * @throws LocalizedException
@@ -83,7 +86,8 @@ class RmaSubmitService
         string $customerName,
         int $reasonId,
         int $resolutionTypeId,
-        array $selectedItems
+        array $selectedItems,
+        string $attachmentsJson = ''
     ): RMAInterface {
         $storeId = (int)$order->getStoreId();
 
@@ -107,7 +111,9 @@ class RmaSubmitService
         $rma->setResolutionTypeId($resolutionTypeId);
 
         $this->rmaRepository->save($rma);
-        $this->saveItems((int)$rma->getEntityId(), $selectedItems);
+        $rmaId = (int)$rma->getEntityId();
+        $this->saveItems($rmaId, $selectedItems);
+        $this->attachmentService->saveFromJson($attachmentsJson, $rmaId);
 
         return $rma;
     }

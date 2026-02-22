@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MageOS\RMA\Block\Customer\Rma;
 
+use MageOS\RMA\Block\Trait\AttachmentConfigTrait;
+use MageOS\RMA\Helper\ModuleConfig;
 use MageOS\RMA\Model\Config\Source\ItemCondition as ItemConditionSource;
 use MageOS\RMA\Model\Config\Source\Reason as ReasonSource;
 use MageOS\RMA\Model\Config\Source\ResolutionType as ResolutionTypeSource;
@@ -17,6 +19,8 @@ use Magento\Framework\Exception\NoSuchEntityException;
 
 class Create extends Template
 {
+    use AttachmentConfigTrait;
+
     /**
      * @param Context $context
      * @param CustomerSession $customerSession
@@ -26,6 +30,7 @@ class Create extends Template
      * @param ItemConditionSource $itemConditionSource
      * @param StoreManagerInterface $storeManager
      * @param Json $json
+     * @param ModuleConfig $moduleConfig
      * @param array $data
      */
     public function __construct(
@@ -37,6 +42,7 @@ class Create extends Template
         protected readonly ItemConditionSource $itemConditionSource,
         protected readonly StoreManagerInterface $storeManager,
         protected readonly Json $json,
+        protected readonly ModuleConfig $moduleConfig,
         array $data = []
     ) {
         parent::__construct($context, $data);
@@ -59,7 +65,6 @@ class Create extends Template
         $collection = $this->orderEligibility->getCustomerEligibleOrders($customerId, $storeId);
 
         foreach ($collection as $order) {
-            // Final check: does this order have eligible items?
             $eligibleItems = $this->orderEligibility->getEligibleItems($order);
             if (!empty($eligibleItems)) {
                 $orders[] = [
@@ -122,6 +127,10 @@ class Create extends Template
             'itemsAjaxUrl' => $this->getItemsAjaxUrl(),
             'conditions' => $this->getConditions(),
             'preloadOrderId' => $this->getPreselectedOrderId(),
+            'uploadUrl' => $this->getUploadUrl(),
+            'allowedExtensions' => $this->getAllowedExtensions(),
+            'maxFileSize' => $this->getMaxFileSize(),
+            'maxFiles' => $this->getMaxFiles(),
         ]);
     }
 
@@ -139,6 +148,14 @@ class Create extends Template
     public function getPostUrl(): string
     {
         return $this->getUrl('rma/customer/save');
+    }
+
+    /**
+     * @return string
+     */
+    public function getUploadUrl(): string
+    {
+        return $this->getUrl('rma/customer_attachment/upload');
     }
 
     /**

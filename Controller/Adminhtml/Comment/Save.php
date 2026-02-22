@@ -9,6 +9,7 @@ use MageOS\RMA\Api\Data\CommentInterface;
 use MageOS\RMA\Api\Data\CommentInterfaceFactory;
 use MageOS\RMA\Api\RMARepositoryInterface;
 use MageOS\RMA\Controller\Adminhtml\Rma as BaseController;
+use MageOS\RMA\Service\AttachmentService;
 use MageOS\RMA\Service\CommentFormatter;
 use Magento\Backend\App\Action\Context;
 use Magento\Backend\Model\Auth\Session as AuthSession;
@@ -28,6 +29,7 @@ class Save extends BaseController implements HttpPostActionInterface
      * @param AuthSession $authSession
      * @param JsonFactory $jsonFactory
      * @param CommentFormatter $commentFormatter
+     * @param AttachmentService $attachmentService
      */
     public function __construct(
         Context $context,
@@ -36,7 +38,8 @@ class Save extends BaseController implements HttpPostActionInterface
         protected readonly RMARepositoryInterface $rmaRepository,
         protected readonly AuthSession $authSession,
         protected readonly JsonFactory $jsonFactory,
-        protected readonly CommentFormatter $commentFormatter
+        protected readonly CommentFormatter $commentFormatter,
+        protected readonly AttachmentService $attachmentService
     ) {
         parent::__construct($context);
     }
@@ -59,6 +62,8 @@ class Save extends BaseController implements HttpPostActionInterface
 
         try {
             $comment = $this->createComment($rmaId, $commentText, $isVisible);
+            $attachmentsJson = (string)$this->getRequest()->getParam('attachments', '');
+            $this->attachmentService->saveFromJson($attachmentsJson, $rmaId, (int)$comment->getEntityId());
         } catch (Exception) {
             return $result->setData(['success' => false, 'message' => (string)__('Could not save comment.')]);
         }

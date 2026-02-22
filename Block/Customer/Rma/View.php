@@ -6,6 +6,7 @@ namespace MageOS\RMA\Block\Customer\Rma;
 
 use MageOS\RMA\Api\Data\RMAInterface;
 use MageOS\RMA\Model\ResourceModel\Item\CollectionFactory as ItemCollectionFactory;
+use MageOS\RMA\Service\AttachmentService;
 use MageOS\RMA\Service\LabelResolver;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\View\Element\Template;
@@ -21,6 +22,7 @@ class View extends Template
      * @param ItemCollectionFactory $itemCollectionFactory
      * @param OrderRepositoryInterface $orderRepository
      * @param OrderItemRepositoryInterface $orderItemRepository
+     * @param AttachmentService $attachmentService
      * @param array $data
      */
     public function __construct(
@@ -29,6 +31,7 @@ class View extends Template
         protected readonly ItemCollectionFactory $itemCollectionFactory,
         protected readonly OrderRepositoryInterface $orderRepository,
         protected readonly OrderItemRepositoryInterface $orderItemRepository,
+        protected readonly AttachmentService $attachmentService,
         array $data = []
     ) {
         parent::__construct($context, $data);
@@ -108,6 +111,33 @@ class View extends Template
         }
 
         return $items;
+    }
+
+    /**
+     * @return array
+     */
+    public function getAttachments(): array
+    {
+        $rma = $this->getRma();
+        if (!$rma) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($this->attachmentService->getByRmaId((int)$rma->getEntityId()) as $attachment) {
+            $result[] = $this->attachmentService->toArray($attachment);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param int $attachmentId
+     * @return string
+     */
+    public function getDownloadUrl(int $attachmentId): string
+    {
+        return $this->getUrl('rma/customer_attachment/download', ['id' => $attachmentId]);
     }
 
     /**

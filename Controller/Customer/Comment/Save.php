@@ -8,6 +8,7 @@ use MageOS\RMA\Api\CommentRepositoryInterface;
 use MageOS\RMA\Api\Data\CommentInterface;
 use MageOS\RMA\Api\Data\CommentInterfaceFactory;
 use MageOS\RMA\Api\RMARepositoryInterface;
+use MageOS\RMA\Service\AttachmentService;
 use MageOS\RMA\Service\CommentFormatter;
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\Action\HttpPostActionInterface;
@@ -27,6 +28,7 @@ class Save implements HttpPostActionInterface
      * @param RMARepositoryInterface $rmaRepository
      * @param CustomerSession $customerSession
      * @param CommentFormatter $commentFormatter
+     * @param AttachmentService $attachmentService
      */
     public function __construct(
         protected readonly RequestInterface $request,
@@ -35,7 +37,8 @@ class Save implements HttpPostActionInterface
         protected readonly CommentRepositoryInterface $commentRepository,
         protected readonly RMARepositoryInterface $rmaRepository,
         protected readonly CustomerSession $customerSession,
-        protected readonly CommentFormatter $commentFormatter
+        protected readonly CommentFormatter $commentFormatter,
+        protected readonly AttachmentService $attachmentService
     ) {
     }
 
@@ -65,6 +68,8 @@ class Save implements HttpPostActionInterface
 
         try {
             $comment = $this->createComment($rmaId, $commentText);
+            $attachmentsJson = (string)$this->request->getParam('attachments', '');
+            $this->attachmentService->saveFromJson($attachmentsJson, $rmaId, (int)$comment->getEntityId());
         } catch (Exception) {
             return $result->setData(['success' => false, 'message' => (string)__('Could not save comment.')]);
         }

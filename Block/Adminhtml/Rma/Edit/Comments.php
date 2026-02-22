@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace MageOS\RMA\Block\Adminhtml\Rma\Edit;
 
 use MageOS\RMA\Api\RMARepositoryInterface;
-use MageOS\RMA\Model\ResourceModel\Comment\CollectionFactory;
+use MageOS\RMA\Block\Trait\AttachmentConfigTrait;
+use MageOS\RMA\Helper\ModuleConfig;
+use MageOS\RMA\Service\AttachmentService;
+use MageOS\RMA\Service\CommentFormatter;
 use Magento\Backend\Block\Template;
 use Magento\Backend\Block\Template\Context;
-use Magento\Framework\Exception\NoSuchEntityException;
 
 class Comments extends Template
 {
+    use AttachmentConfigTrait;
+
     /**
      * @var string
      */
@@ -20,13 +24,17 @@ class Comments extends Template
     /**
      * @param Context $context
      * @param RMARepositoryInterface $rmaRepository
-     * @param CollectionFactory $commentCollectionFactory
+     * @param CommentFormatter $commentFormatter
+     * @param AttachmentService $attachmentService
+     * @param ModuleConfig $moduleConfig
      * @param array $data
      */
     public function __construct(
         Context $context,
         protected readonly RMARepositoryInterface $rmaRepository,
-        protected readonly CollectionFactory $commentCollectionFactory,
+        protected readonly CommentFormatter $commentFormatter,
+        protected readonly AttachmentService $attachmentService,
+        protected readonly ModuleConfig $moduleConfig,
         array $data = []
     ) {
         parent::__construct($context, $data);
@@ -58,23 +66,7 @@ class Comments extends Template
             return [];
         }
 
-        $collection = $this->commentCollectionFactory->create();
-        $collection->addFieldToFilter('rma_id', $rmaId);
-        $collection->setOrder('created_at', 'ASC');
-
-        $comments = [];
-        foreach ($collection as $comment) {
-            $comments[] = [
-                'entity_id' => $comment->getEntityId(),
-                'author_type' => $comment->getAuthorType(),
-                'author_name' => $comment->getAuthorName(),
-                'comment' => $comment->getComment(),
-                'is_visible_to_customer' => (bool)$comment->getIsVisibleToCustomer(),
-                'created_at' => $comment->getCreatedAt(),
-            ];
-        }
-
-        return $comments;
+        return $this->commentFormatter->buildList($rmaId, includeVisibility: true);
     }
 
     /**
@@ -91,5 +83,56 @@ class Comments extends Template
     public function getLoadListUrl(): string
     {
         return $this->getUrl('rma/comment/loadList');
+    }
+
+    /**
+     * @return string
+     */
+    public function getUploadUrl(): string
+    {
+        return $this->getUrl('rma/attachment/upload');
+    }
+
+    /**
+     * @return string
+     */
+    public function getDownloadUrl(): string
+    {
+        return $this->getUrl('rma/attachment/download');
+    }
+
+    /**
+     * @return string
+     */
+    public function getDeleteUrl(): string
+    {
+        return $this->getUrl('rma/attachment/delete');
+    }
+
+    /**
+     * @return array
+     */
+    public function getAttachments(): array
+    {
+        $rmaId = $this->getRmaId();
+        if (!$rmaId) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($this->attachmentService->getByRmaId($rmaId) as $attachment) {
+            $result[] = $this->attachmentService->toArray($attachment);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param int $attachmentId
+     * @return string
+     */
+    public function getAttachmentDownloadUrl(int $attachmentId): string
+    {
+        return $this->getUrl('rma/attachment/download', ['id' => $attachmentId]);
     }
 }

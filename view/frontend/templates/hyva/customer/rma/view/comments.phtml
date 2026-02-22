@@ -18,13 +18,20 @@ if (!empty($comments)) {
     $lastComment = end($comments);
     $lastId = $lastComment['entity_id'];
 }
+
+$downloadUrl = $block->getDownloadUrl();
 ?>
 <div class="bg-white border border-gray-200 rounded-lg p-6 mt-6"
      x-data="rmaComments({
          rmaId: <?= (int)$rmaId ?>,
          saveUrl: '<?= $block->escapeJs($block->getSaveUrl()) ?>',
          loadListUrl: '<?= $block->escapeJs($block->getLoadListUrl()) ?>',
-         lastCommentId: <?= (int)$lastId ?>
+         lastCommentId: <?= (int)$lastId ?>,
+         uploadUrl: '<?= $block->escapeJs($block->getUploadUrl()) ?>',
+         downloadUrl: '<?= $block->escapeJs($downloadUrl) ?>',
+         allowedExtensions: '<?= $block->escapeJs($block->getAllowedExtensions()) ?>',
+         maxFileSize: <?= (int)$block->getMaxFileSize() ?>,
+         maxFiles: <?= (int)$block->getMaxFiles() ?>
      })"
      x-init="init()">
 
@@ -53,6 +60,18 @@ if (!empty($comments)) {
                         <span><?= $block->escapeHtml($comment['created_at']) ?></span>
                     </div>
                     <div class="whitespace-pre-wrap text-gray-800"><?= $block->escapeHtml($comment['comment']) ?></div>
+                    <?php if (!empty($comment['attachments'])): ?>
+                        <div class="mt-2 pt-2 border-t border-gray-200 space-y-1">
+                            <?php foreach ($comment['attachments'] as $att): ?>
+                                <div class="text-xs">
+                                    <a href="<?= $block->escapeUrl($downloadUrl . (str_contains($downloadUrl, '?') ? '&' : '?') . 'id=' . (int)$att['entity_id']) ?>"
+                                       target="_blank" class="text-primary hover:underline">
+                                        &#128206; <?= $block->escapeHtml($att['file_name']) ?>
+                                    </a>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
@@ -70,6 +89,18 @@ if (!empty($comments)) {
                     <span x-text="comment.created_at"></span>
                 </div>
                 <div class="whitespace-pre-wrap text-gray-800" x-text="comment.comment"></div>
+                <template x-if="comment.attachments && comment.attachments.length > 0">
+                    <div class="mt-2 pt-2 border-t border-gray-200 space-y-1">
+                        <template x-for="att in comment.attachments" :key="att.entity_id">
+                            <div class="text-xs">
+                                <a :href="downloadBaseUrl + (downloadBaseUrl.includes('?') ? '&' : '?') + 'id=' + att.entity_id"
+                                   target="_blank" class="text-primary hover:underline">
+                                    &#128206; <span x-text="att.file_name"></span>
+                                </a>
+                            </div>
+                        </template>
+                    </div>
+                </template>
             </div>
         </template>
     </div>
@@ -82,6 +113,26 @@ if (!empty($comments)) {
                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-y"
                   :placeholder="'<?= $block->escapeJs(__('Type your message...')) ?>'"
         ></textarea>
+
+        <!-- File upload -->
+        <div>
+            <div @click="$refs.commentFileInput.click()"
+                 @dragover.prevent="uploadDragOver = true"
+                 @dragleave.prevent="uploadDragOver = false"
+                 @drop.prevent="uploadDragOver = false; handleUploadFiles($event.dataTransfer.files)"
+                 :class="uploadDragOver ? 'border-primary bg-blue-50' : 'border-gray-300 bg-gray-50'"
+                 class="border-2 border-dashed rounded-lg p-3 text-center cursor-pointer transition-colors">
+                <p class="text-xs text-gray-500 m-0"><?= $block->escapeHtml(__('Drag & drop files or click to attach')) ?></p>
+            </div>
+            <input type="file" x-ref="commentFileInput" @change="handleUploadFiles($event.target.files); $event.target.value = ''" class="hidden" multiple/>
+            <template x-for="(file, index) in uploadedFiles" :key="index">
+                <div class="flex items-center justify-between bg-white border border-gray-200 rounded px-3 py-1.5 mt-1 text-xs">
+                    <span x-text="file.name" class="text-gray-700 truncate"></span>
+                    <button type="button" @click="uploadedFiles.splice(index, 1)" class="text-red-500 hover:text-red-700 ml-2">&times;</button>
+                </div>
+            </template>
+        </div>
+
         <div class="flex justify-end">
             <button type="button"
                     @click="submitComment()"
@@ -106,6 +157,11 @@ if (!empty($comments)) {
             saveUrl: config.saveUrl,
             loadListUrl: config.loadListUrl,
             lastCommentId: config.lastCommentId || 0,
+            uploadUrl: config.uploadUrl || '',
+            downloadBaseUrl: config.downloadUrl || '',
+            allowedExtensions: (config.allowedExtensions || '').split(',').map(e => e.trim().toLowerCase()),
+            maxFileSize: (config.maxFileSize || 10) * 1024 * 1024,
+            maxFiles: config.maxFiles || 5,
             commentsList: [],
             newComment: '',
             sending: false,
@@ -113,6 +169,8 @@ if (!empty($comments)) {
             baseInterval: 10000,
             maxInterval: 60000,
             currentInterval: 10000,
+            uploadedFiles: [],
+            uploadDragOver: false,
 
             init() {
                 this.scrollToBottom();
@@ -165,6 +223,7 @@ if (!empty($comments)) {
                             if (comment.entity_id > this.lastCommentId) {
                                 this.commentsList.push(comment);
                                 this.lastCommentId = comment.entity_id;
+                                this.addToUnifiedSection(comment.attachments);
                             }
                         });
                         this.scrollToBottom();
@@ -179,6 +238,79 @@ if (!empty($comments)) {
                 }
             },
 
+            handleUploadFiles(files) {
+                Array.from(files).forEach(file => {
+                    if (this.uploadedFiles.length >= this.maxFiles) return;
+                    const ext = file.name.split('.').pop().toLowerCase();
+                    if (this.allowedExtensions.length && this.allowedExtensions[0] !== '' && !this.allowedExtensions.includes(ext)) {
+                        alert('<?= $block->escapeJs(__('File type not allowed.')) ?>');
+                        return;
+                    }
+                    if (file.size > this.maxFileSize) {
+                        alert('<?= $block->escapeJs(__('File exceeds the maximum allowed size.')) ?>');
+                        return;
+                    }
+                    this.uploadToTmp(file);
+                });
+            },
+
+            async uploadToTmp(file) {
+                const formData = new FormData();
+                formData.append('attachment', file);
+                formData.append('form_key', hyva.getCookie('form_key') || '');
+
+                try {
+                    const response = await fetch(this.uploadUrl, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    const data = await response.json();
+                    if (data.success && data.file) {
+                        this.uploadedFiles.push(data.file);
+                    } else {
+                        alert(data.message || '<?= $block->escapeJs(__('Upload failed.')) ?>');
+                    }
+                } catch {
+                    alert('<?= $block->escapeJs(__('Upload failed.')) ?>');
+                }
+            },
+
+            addToUnifiedSection(attachments) {
+                if (!attachments || attachments.length === 0) return;
+                const container = document.getElementById('rma-all-attachments');
+                if (!container) return;
+
+                const noMsg = container.querySelector('.rma-no-attachments');
+                if (noMsg) noMsg.remove();
+
+                attachments.forEach(att => {
+                    if (container.querySelector('[data-attachment-id="' + att.entity_id + '"]')) return;
+
+                    const url = this.downloadBaseUrl + (this.downloadBaseUrl.includes('?') ? '&' : '?') + 'id=' + att.entity_id;
+                    const li = document.createElement('li');
+                    li.setAttribute('data-attachment-id', att.entity_id);
+                    li.className = 'py-2';
+                    li.innerHTML = '<a href="' + this.escapeAttr(url) + '" target="_blank" ' +
+                        'class="text-sm text-primary hover:text-primary-darker hover:underline">' +
+                        '&#128206; ' + this.escapeHtml(att.file_name) + '</a>' +
+                        (att.file_size_label
+                            ? ' <span class="text-xs text-gray-400 ml-1">(' + this.escapeHtml(att.file_size_label) + ')</span>'
+                            : '');
+                    container.appendChild(li);
+                });
+            },
+
+            escapeHtml(str) {
+                const el = document.createElement('span');
+                el.textContent = str;
+                return el.innerHTML;
+            },
+
+            escapeAttr(str) {
+                return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            },
+
             async submitComment() {
                 const text = this.newComment.trim();
                 if (!text || this.sending) return;
@@ -191,6 +323,7 @@ if (!empty($comments)) {
                     formData.append('rma_id', this.rmaId);
                     formData.append('comment', text);
                     formData.append('form_key', formKey);
+                    formData.append('attachments', JSON.stringify(this.uploadedFiles));
 
                     const response = await fetch(this.saveUrl, {
                         method: 'POST',
@@ -202,7 +335,9 @@ if (!empty($comments)) {
                     if (data.success && data.comment) {
                         this.commentsList.push(data.comment);
                         this.lastCommentId = data.comment.entity_id;
+                        this.addToUnifiedSection(data.comment.attachments);
                         this.newComment = '';
+                        this.uploadedFiles = [];
                         this.scrollToBottom();
                         this.currentInterval = this.baseInterval;
                     }

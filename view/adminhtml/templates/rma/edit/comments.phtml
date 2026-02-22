@@ -11,13 +11,48 @@ if (!$block->isEditMode()) {
 }
 
 $comments = $block->getComments();
+$attachments = $block->getAttachments();
 $rmaId = $block->getRmaId();
 $lastId = 0;
 if (!empty($comments)) {
     $lastComment = end($comments);
     $lastId = $lastComment['entity_id'];
 }
+
+$downloadUrl = $block->getDownloadUrl();
+$deleteUrl = $block->getDeleteUrl();
 ?>
+<div class="admin__fieldset" id="rma-attachments-section" style="margin-bottom: 20px;">
+    <div class="admin__field-complex-title">
+        <span class="title"><?= $block->escapeHtml(__('Attachments')) ?></span>
+    </div>
+    <div style="border: 1px solid #ccc; padding: 10px; background: #fafafa;">
+        <ul id="rma-all-attachments" style="list-style: none; padding: 0; margin: 0;">
+            <?php if (empty($attachments)): ?>
+                <li class="rma-no-attachments" style="color: #999; font-style: italic; padding: 4px 0;">
+                    <?= $block->escapeHtml(__('No attachments yet.')) ?>
+                </li>
+            <?php else: ?>
+                <?php foreach ($attachments as $att): ?>
+                    <li data-attachment-id="<?= (int)$att['entity_id'] ?>" style="padding: 4px 0; border-bottom: 1px solid #eee;">
+                        <a href="<?= $block->escapeUrl($block->getAttachmentDownloadUrl((int)$att['entity_id'])) ?>"
+                           target="_blank" style="color: #1979c3; text-decoration: none;">
+                            &#128206; <?= $block->escapeHtml($att['file_name']) ?>
+                        </a>
+                        <span style="color: #999; font-size: 12px;">
+                            (<?= $block->escapeHtml($att['file_size_label']) ?>)
+                        </span>
+                        <button type="button" class="rma-unified-attachment-delete" data-id="<?= (int)$att['entity_id'] ?>"
+                                style="color: #e22626; cursor: pointer; border: none; background: none; font-size: 11px; padding: 0; margin-left: 4px;">
+                            <?= $block->escapeHtml(__('Delete')) ?>
+                        </button>
+                    </li>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </ul>
+    </div>
+</div>
+
 <div class="admin__fieldset" id="rma-comments-section">
     <div class="admin__field-complex-title">
         <span class="title"><?= $block->escapeHtml(__('Comments')) ?></span>
@@ -39,6 +74,22 @@ if (!empty($comments)) {
                         <?php endif; ?>
                     </div>
                     <div style="white-space: pre-wrap;"><?= $block->escapeHtml($comment['comment']) ?></div>
+                    <?php if (!empty($comment['attachments'])): ?>
+                        <div class="rma-comment-attachments" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(0,0,0,0.1);">
+                            <?php foreach ($comment['attachments'] as $att): ?>
+                                <div class="rma-attachment-item" style="font-size: 11px; margin-top: 3px;">
+                                    <a href="<?= $block->escapeUrl($downloadUrl . (str_contains($downloadUrl, '?') ? '&' : '?') . 'id=' . (int)$att['entity_id']) ?>"
+                                       target="_blank" style="color: #1979c3; text-decoration: none;">
+                                        &#128206; <?= $block->escapeHtml($att['file_name']) ?>
+                                    </a>
+                                    <button type="button" class="rma-attachment-delete" data-id="<?= (int)$att['entity_id'] ?>"
+                                            style="color: #e22626; cursor: pointer; border: none; background: none; font-size: 11px; padding: 0; margin-left: 4px;">
+                                        <?= $block->escapeHtml(__('Delete')) ?>
+                                    </button>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
@@ -47,6 +98,21 @@ if (!empty($comments)) {
     <div class="rma-comment-form" style="margin-bottom: 10px;">
         <textarea id="rma-comment-text" rows="3" style="width: 100%; box-sizing: border-box;"
                   placeholder="<?= $block->escapeHtmlAttr(__('Type your comment...')) ?>"></textarea>
+        <div class="rma-comment-upload-widget" style="margin-top: 8px;"
+             data-mage-init='{"MageOS_RMA/js/rma-file-upload": {
+                 "uploadUrl": "<?= $block->escapeUrl($block->getUploadUrl()) ?>",
+                 "allowedExtensions": "<?= $block->escapeHtmlAttr($block->getAllowedExtensions()) ?>",
+                 "maxFileSize": <?= (int)$block->getMaxFileSize() ?>,
+                 "maxFiles": <?= (int)$block->getMaxFiles() ?>,
+                 "formKey": "<?= $block->escapeJs($block->getFormKey()) ?>"
+             }}'>
+            <div class="rma-upload-dropzone" style="border: 2px dashed #ccc; border-radius: 4px; padding: 12px; text-align: center; cursor: pointer; background: #fafafa;">
+                <span style="color: #666; font-size: 12px;"><?= $block->escapeHtml(__('Drag & drop files here or click to browse')) ?></span>
+            </div>
+            <input type="file" class="rma-upload-input" style="display: none;" multiple/>
+            <div class="rma-upload-list" style="margin-top: 4px;"></div>
+            <input type="hidden" class="rma-upload-data" value="[]"/>
+        </div>
         <div style="margin-top: 8px; display: flex; align-items: center; gap: 15px;">
             <label>
                 <input type="checkbox" id="rma-comment-visible" checked="checked"/>
@@ -67,7 +133,9 @@ if (!empty($comments)) {
             "saveUrl": "<?= $block->escapeJs($block->getSaveUrl()) ?>",
             "loadListUrl": "<?= $block->escapeJs($block->getLoadListUrl()) ?>",
             "lastCommentId": <?= (int)$lastId ?>,
-            "isAdmin": true
+            "isAdmin": true,
+            "downloadUrl": "<?= $block->escapeJs($block->getDownloadUrl()) ?>",
+            "deleteUrl": "<?= $block->escapeJs($block->getDeleteUrl()) ?>"
         }
     }
 }

@@ -1,0 +1,21 @@
+<?php
+
+declare(strict_types=1);
+
+namespace MageOS\RMA\Api\Data;
+
+use Magento\Framework\Api\SearchResultsInterface;
+
+interface AttachmentSearchResultsInterface extends SearchResultsInterface
+{
+    /**
+     * @return AttachmentInterface[]
+     */
+    public function getItems(): array;
+
+    /**
+     * @param AttachmentInterface[] $items
+     * @return $this
+     */
+    public function setItems(array $items): self;
+}
