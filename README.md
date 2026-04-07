@@ -325,7 +325,7 @@ All endpoints require an admin integration token (`Authorization: Bearer <token>
 
 ### RMA Items
 
-Items are scoped under their parent RMA.
+Items are managed as a **sub-resource** of the parent RMA, following the same pattern as Magento core (e.g. `OrderInterface` / `OrderItemRepositoryInterface`). The `GET /V1/rma/:entityId` endpoint returns the RMA header only — to retrieve items, use the dedicated endpoints below.
 
 | Method | Endpoint | ACL | Description |
 |---|---|---|---|
@@ -335,7 +335,7 @@ Items are scoped under their parent RMA.
 
 ### RMA Comments
 
-Comments are scoped under their parent RMA.
+Comments are managed as a **sub-resource** of the parent RMA, same as items above.
 
 | Method | Endpoint | ACL | Description |
 |---|---|---|---|
