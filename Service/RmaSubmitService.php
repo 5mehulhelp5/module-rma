@@ -13,9 +13,11 @@ use MageOS\RMA\Helper\ModuleConfig;
 use MageOS\RMA\Model\ItemFactory;
 use MageOS\RMA\Model\RMA\StatusCodes;
 use MageOS\RMA\Model\ResourceModel\Status\CollectionFactory as StatusCollectionFactory;
+use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\CouldNotSaveException;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Sales\Api\Data\OrderInterface;
+use Throwable;
 
 class RmaSubmitService
 {
@@ -28,6 +30,7 @@ class RmaSubmitService
      * @param ModuleConfig $moduleConfig
      * @param AttachmentService $attachmentService
      * @param OrderEligibility $orderEligibility
+     * @param ResourceConnection $resourceConnection
      */
     public function __construct(
         protected readonly RMARepositoryInterface $rmaRepository,
@@ -37,7 +40,8 @@ class RmaSubmitService
         protected readonly StatusCollectionFactory $statusCollectionFactory,
         protected readonly ModuleConfig $moduleConfig,
         protected readonly AttachmentService $attachmentService,
-        protected readonly OrderEligibility $orderEligibility
+        protected readonly OrderEligibility $orderEligibility,
+        protected readonly ResourceConnection $resourceConnection
     ) {
     }
 
@@ -80,6 +84,7 @@ class RmaSubmitService
      * @return RMAInterface
      * @throws CouldNotSaveException
      * @throws LocalizedException
+     * @throws Throwable
      */
     public function createRma(
         OrderInterface $order,
@@ -116,10 +121,19 @@ class RmaSubmitService
         $rma->setReasonId($reasonId);
         $rma->setResolutionTypeId($resolutionTypeId);
 
-        $this->rmaRepository->save($rma);
-        $rmaId = (int)$rma->getEntityId();
-        $this->saveItems($rmaId, $selectedItems, $order);
-        $this->attachmentService->saveFromJson($attachmentsJson, $rmaId);
+        $connection = $this->resourceConnection->getConnection();
+        $connection->beginTransaction();
+
+        try {
+            $this->rmaRepository->save($rma);
+            $rmaId = (int)$rma->getEntityId();
+            $this->saveItems($rmaId, $selectedItems, $order);
+            $this->attachmentService->saveFromJson($attachmentsJson, $rmaId);
+            $connection->commit();
+        } catch (Throwable $e) {
+            $connection->rollBack();
+            throw $e;
+        }
 
         return $rma;
     }
