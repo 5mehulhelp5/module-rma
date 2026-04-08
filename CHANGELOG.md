@@ -1,5 +1,33 @@
 # Changelog
 
+## [2.0.0] - 2026-04-08
+
+### Breaking Changes
+- `RmaSubmitService::saveItems()` now requires `OrderInterface $order` as third parameter
+- `AbstractRmaManagement` now injects `SearchCriteriaBuilderFactory` instead of `SearchCriteriaBuilder` (affects `RmaItemManagement` and `RmaCommentManagement` constructors)
+
+### Fixed
+- **[Security]** Order item IDs not validated against submitted order (#6)
+- **[Security]** No quantity validation against available qty — customers could request more than ordered (#7)
+- **[Data Integrity]** RMA creation not transactional — partial saves on failure (#10)
+- **[Data Integrity]** Store view deletion cascading to RMA records — changed FK to SET NULL (#11)
+- **[Data Integrity]** `db_schema_whitelist.json` missing `rma_attachment` table and indexes for `reason_id`/`resolution_type_id` (#12)
+- **[Infrastructure]** `AutoApproveRma` observer causing redundant double-save — removed, service already handles it (#15)
+- **[Code Quality]** `SearchCriteriaBuilder` shared instance mutated across calls in `AbstractRmaManagement` (#23)
+- **[Code Quality]** Frontend Luma templates using inline styles — extracted to LESS classes (#25)
+- **[API]** `getStoreLabels()` return type `array` not Web API serializable — typed as `string[]` (#21)
+- **[i18n]** 65 missing translation strings added to all 4 locale CSVs (#27)
+
+### Added
+- `@api` annotation on all 27 interfaces (#16)
+- Sequence dependencies in `module.xml` for `Magento_Sales`, `Magento_Webapi`, `Magento_GraphQl` (#13)
+- Composer `require` for `magento/module-sales`, `magento/module-webapi`, `magento/module-graph-ql` (#13)
+- Indexes on `rma_entity.reason_id` and `rma_entity.resolution_type_id` (#12)
+- Sub-resource pattern documented in README for items and comments endpoints (#19)
+
+### Removed
+- `Observer/AutoApproveRma.php` and its event binding in `events.xml` (#15)
+
 ## [1.3.1] - 2026-03-09
 
 ### Fixed
