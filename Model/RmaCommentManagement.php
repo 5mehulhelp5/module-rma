@@ -11,6 +11,7 @@ use MageOS\RMA\Api\RMARepositoryInterface;
 use MageOS\RMA\Api\RmaCommentManagementInterface;
 use Magento\Framework\Api\SearchCriteriaInterface;
 use Magento\Framework\Api\SearchCriteriaBuilderFactory;
+use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Framework\Exception\CouldNotSaveException;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -20,14 +21,16 @@ class RmaCommentManagement extends AbstractRmaManagement implements RmaCommentMa
     /**
      * @param RMARepositoryInterface $rmaRepository
      * @param SearchCriteriaBuilderFactory $searchCriteriaBuilderFactory
+     * @param SortOrderBuilder $sortOrderBuilder
      * @param CommentRepositoryInterface $commentRepository
      */
     public function __construct(
         RMARepositoryInterface $rmaRepository,
         SearchCriteriaBuilderFactory $searchCriteriaBuilderFactory,
+        SortOrderBuilder $sortOrderBuilder,
         protected readonly CommentRepositoryInterface $commentRepository
     ) {
-        parent::__construct($rmaRepository, $searchCriteriaBuilderFactory);
+        parent::__construct($rmaRepository, $searchCriteriaBuilderFactory, $sortOrderBuilder);
     }
 
     /**

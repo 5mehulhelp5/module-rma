@@ -7,6 +7,7 @@ namespace MageOS\RMA\Model;
 use MageOS\RMA\Api\RMARepositoryInterface;
 use Magento\Framework\Api\SearchCriteriaBuilderFactory;
 use Magento\Framework\Api\SearchCriteriaInterface;
+use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Framework\Exception\NoSuchEntityException;
 
 abstract class AbstractRmaManagement
@@ -14,10 +15,12 @@ abstract class AbstractRmaManagement
     /**
      * @param RMARepositoryInterface $rmaRepository
      * @param SearchCriteriaBuilderFactory $searchCriteriaBuilderFactory
+     * @param SortOrderBuilder $sortOrderBuilder
      */
     public function __construct(
         protected readonly RMARepositoryInterface $rmaRepository,
-        protected readonly SearchCriteriaBuilderFactory $searchCriteriaBuilderFactory
+        protected readonly SearchCriteriaBuilderFactory $searchCriteriaBuilderFactory,
+        protected readonly SortOrderBuilder $sortOrderBuilder
     ) {
     }
 
@@ -55,10 +58,11 @@ abstract class AbstractRmaManagement
 
         if ($searchCriteria->getSortOrders()) {
             foreach ($searchCriteria->getSortOrders() as $sortOrder) {
-                $builder->addSortOrder(
-                    $sortOrder->getField(),
-                    $sortOrder->getDirection()
-                );
+                $built = $this->sortOrderBuilder
+                    ->setField($sortOrder->getField())
+                    ->setDirection($sortOrder->getDirection())
+                    ->create();
+                $builder->addSortOrder($built);
             }
         }
 

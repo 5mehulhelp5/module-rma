@@ -12,6 +12,7 @@ use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Theme\Block\Html\Pager;
+use Magento\Framework\Exception\NoSuchEntityException;
 
 class ListRma extends Template
 {

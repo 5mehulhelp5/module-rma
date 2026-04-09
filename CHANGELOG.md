@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.1] - 2026-04-09
+
+### Fixed
+- `NoSuchEntityException` resolved in wrong namespace in `Block/Customer/Rma/ListRma.php` — catch block never matched
+- `SearchCriteriaBuilder::addSortOrder()` called with two strings instead of `SortOrder` object in `AbstractRmaManagement` — runtime error when sorting items/comments via management layer
+
 ## [2.0.0] - 2026-04-08
 
 ### Breaking Changes
