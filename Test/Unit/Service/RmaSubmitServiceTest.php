@@ -199,20 +199,19 @@ class RmaSubmitServiceTest extends TestCase
         $statusItem->method('getEntityId')->willReturn(1);
 
         $statusCollection = $this->createMock(\MageOS\RMA\Model\ResourceModel\Status\Collection::class);
-        $statusCollection->method('addFieldToFilter')->willReturnSelf();
         $statusCollection->method('setPageSize')->willReturnSelf();
         $statusCollection->method('getFirstItem')->willReturn($statusItem);
+
+        $statusCollection->expects($this->once())
+            ->method('addFieldToFilter')
+            ->with(\MageOS\RMA\Api\Data\StatusInterface::CODE, StatusCodes::NEW_REQUEST)
+            ->willReturnSelf();
 
         $this->statusCollectionFactory->method('create')->willReturn($statusCollection);
 
         $rma = $this->createMock(RMAInterface::class);
         $rma->method('getEntityId')->willReturn(10);
         $this->rmaFactory->method('create')->willReturn($rma);
-
-        $statusCollection->expects($this->once())
-            ->method('addFieldToFilter')
-            ->with(\MageOS\RMA\Api\Data\StatusInterface::CODE, StatusCodes::NEW_REQUEST)
-            ->willReturnSelf();
 
         $this->orderEligibility->method('getEligibleItems')->willReturn([]);
         $this->attachmentService->method('saveFromJson');
@@ -240,20 +239,19 @@ class RmaSubmitServiceTest extends TestCase
         $statusItem->method('getEntityId')->willReturn(2);
 
         $statusCollection = $this->createMock(\MageOS\RMA\Model\ResourceModel\Status\Collection::class);
-        $statusCollection->method('addFieldToFilter')->willReturnSelf();
         $statusCollection->method('setPageSize')->willReturnSelf();
         $statusCollection->method('getFirstItem')->willReturn($statusItem);
+
+        $statusCollection->expects($this->once())
+            ->method('addFieldToFilter')
+            ->with(\MageOS\RMA\Api\Data\StatusInterface::CODE, StatusCodes::APPROVED)
+            ->willReturnSelf();
 
         $this->statusCollectionFactory->method('create')->willReturn($statusCollection);
 
         $rma = $this->createMock(RMAInterface::class);
         $rma->method('getEntityId')->willReturn(10);
         $this->rmaFactory->method('create')->willReturn($rma);
-
-        $statusCollection->expects($this->once())
-            ->method('addFieldToFilter')
-            ->with(\MageOS\RMA\Api\Data\StatusInterface::CODE, StatusCodes::APPROVED)
-            ->willReturnSelf();
 
         $this->orderEligibility->method('getEligibleItems')->willReturn([]);
         $this->attachmentService->method('saveFromJson');
