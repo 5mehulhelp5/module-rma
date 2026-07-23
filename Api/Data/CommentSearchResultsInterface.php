@@ -17,7 +17,7 @@ interface CommentSearchResultsInterface extends SearchResultsInterface
     public function getItems(): array;
 
     /**
-     * @param CommentInterface[] $items
+     * @param \MageOS\RMA\Api\Data\CommentInterface[] $items
      * @return $this
      */
     public function setItems(array $items): self;

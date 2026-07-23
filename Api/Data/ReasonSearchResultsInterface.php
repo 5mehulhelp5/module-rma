@@ -17,7 +17,7 @@ interface ReasonSearchResultsInterface extends SearchResultsInterface
     public function getItems(): array;
 
     /**
-     * @param ReasonInterface[] $items
+     * @param \MageOS\RMA\Api\Data\ReasonInterface[] $items
      * @return $this
      */
     public function setItems(array $items): self;

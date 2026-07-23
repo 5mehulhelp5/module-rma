@@ -17,7 +17,7 @@ interface StatusSearchResultsInterface extends SearchResultsInterface
     public function getItems(): array;
 
     /**
-     * @param StatusInterface[] $items
+     * @param \MageOS\RMA\Api\Data\StatusInterface[] $items
      * @return $this
      */
     public function setItems(array $items): self;

@@ -17,7 +17,7 @@ interface AttachmentSearchResultsInterface extends SearchResultsInterface
     public function getItems(): array;
 
     /**
-     * @param AttachmentInterface[] $items
+     * @param \MageOS\RMA\Api\Data\AttachmentInterface[] $items
      * @return $this
      */
     public function setItems(array $items): self;

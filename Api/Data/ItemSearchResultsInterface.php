@@ -17,7 +17,7 @@ interface ItemSearchResultsInterface extends SearchResultsInterface
     public function getItems(): array;
 
     /**
-     * @param ItemInterface[] $items
+     * @param \MageOS\RMA\Api\Data\ItemInterface[] $items
      * @return $this
      */
     public function setItems(array $items): self;

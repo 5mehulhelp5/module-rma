@@ -17,7 +17,7 @@ interface ResolutionTypeSearchResultsInterface extends SearchResultsInterface
     public function getItems(): array;
 
     /**
-     * @param ResolutionTypeInterface[] $items
+     * @param \MageOS\RMA\Api\Data\ResolutionTypeInterface[] $items
      * @return $this
      */
     public function setItems(array $items): self;

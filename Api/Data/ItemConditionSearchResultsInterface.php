@@ -17,7 +17,7 @@ interface ItemConditionSearchResultsInterface extends SearchResultsInterface
     public function getItems(): array;
 
     /**
-     * @param ItemConditionInterface[] $items
+     * @param \MageOS\RMA\Api\Data\ItemConditionInterface[] $items
      * @return $this
      */
     public function setItems(array $items): self;
